@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DaJu Math</title>
+<style>
+  body {
+    font-family: "Times New Roman", Times, serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  #header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #f0f0f0;
+  }
+  #startContainer {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  #scoreDisplay {
+    font-size: 24px;
+    margin-top: 15px;
+    font-weight: bold;
+    display: none; /* Hide score initially */
+  }
+  #game {
+    margin-top: 50px;
+  }
+  button.choice {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 24px;
+    margin: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  #timerContainer {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 24px;
+    margin-top: 20px;
+  }
+  #history {
+    margin-top: 30px;
+    padding: 0 20px;
+    font-family: "Times New Roman", Times, serif;
+  }
+  #history table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Times New Roman", Times, serif;
+  }
+  #history th, #history td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: center;
+  }
+  #history th {
+    background-color: #f0f0f0;
+  }
+  #rating {
+    font-size: 24px;
+    margin-top: 15px;
+    font-weight: bold;
+  }
+  #startBtn {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid #000;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 24px;
+    cursor: pointer;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  #startBtn:hover {
+    background-color: #000;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="today"></div>
+  <div id="startTimeDisplay" style="display:none;"></div>
+</div>
+
+<h1>DaJu Math</h1>
+
+<div id="startContainer">
+  <button id="startBtn">START</button>
+  <div id="scoreDisplay">Score: 0</div>
+</div>
+
+<div id="game" style="display:none;">
+  <p id="question" style="font-size:28px;"></p>
+  <button class="choice" id="choice1"></button>
+  <button class="choice" id="choice2"></button>
+  <div id="timerContainer" style="display:block;">
+    <span id="time">1.45</span>s
+  </div>
+</div>
+
+<div id="history" style="display:none;">
+  <h3>Game History</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Given Question</th>
+        <th>Your Answer</th>
+      </tr>
+    </thead>
+    <tbody id="historyTableBody">
+    </tbody>
+  </table>
+  <div id="rating"></div>
+</div>
+
+<script>
+let timer;
+let timeLeft = 1.45;
+let lives = 5;
+let currentAnswer;
+let historyEntries = [];
+let gameStartTime;
+
+function updateDate() {
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const day = today.getDate();
+  const year = today.getFullYear();
+  document.getElementById('today').textContent = `${month}/${day}/${year}`;
+}
+
+function formatTime(date) {
+  let hours = date.getHours();
+  let minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  minutes = minutes < 10 ? '0' + minutes : minutes;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+function startGame() {
+  document.getElementById('startContainer').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  document.getElementById('history').style.display = 'none';
+  document.body.style.backgroundColor = 'white';
+  lives = 5;
+  historyEntries = [];
+  document.getElementById('scoreDisplay').style.display = 'none';
+
+  gameStartTime = new Date();
+  const startTimeDisplay = document.getElementById('startTimeDisplay');
+  startTimeDisplay.textContent = formatTime(gameStartTime);
+  startTimeDisplay.style.display = 'block';
+
+  nextQuestion();
+}
+
+function nextQuestion() {
+  document.body.style.backgroundColor = 'white';
+  timeLeft = 1.45;
+  document.getElementById('time').textContent = timeLeft.toFixed(2);
+
+  let a = Math.floor(Math.random() * 10);
+  let b = Math.floor(Math.random() * 10);
+  currentAnswer = a + b;
+  document.getElementById('question').textContent = `${a} + ${b} = ?`;
+
+  let wrongAnswer;
+  do { wrongAnswer = Math.floor(Math.random() * 19); } while (wrongAnswer === currentAnswer);
+
+  if(Math.random() < 0.5){
+    document.getElementById('choice1').textContent = currentAnswer;
+    document.getElementById('choice2').textContent = wrongAnswer;
+  } else {
+    document.getElementById('choice1').textContent = wrongAnswer;
+    document.getElementById('choice2').textContent = currentAnswer;
+  }
+
+  clearInterval(timer);
+  timer = setInterval(() => {
+    timeLeft -= 0.01;
+    if(timeLeft < 0) timeLeft = 0;
+    document.getElementById('time').textContent = timeLeft.toFixed(2);
+    if(timeLeft <= 0) {
+      clearInterval(timer);
+      handleWrong('No Answer');
+    }
+  }, 10);
+}
+
+function handleCorrect(selectedAnswer) {
+  document.body.style.backgroundColor = 'green';
+  historyEntries.push({
+    status: '✓', 
+    question: document.getElementById('question').textContent, 
+    answer: selectedAnswer
+  });
+  setTimeout(nextQuestion, 500);
+}
+
+function handleWrong(selectedAnswer) {
+  lives--;
+  document.body.style.backgroundColor = 'red';
+  historyEntries.push({
+    status: 'ㄨ', 
+    question: document.getElementById('question').textContent, 
+    answer: selectedAnswer
+  });
+  
+  if(lives <= 0){
+    endGame();
+  } else {
+    setTimeout(nextQuestion, 500);
+  }
+}
+
+function checkAnswer(selected) {
+  clearInterval(timer);
+  if(parseInt(selected) === currentAnswer){
+    handleCorrect(selected);
+  } else {
+    handleWrong(selected);
+  }
+}
+
+function endGame() {
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('history').style.display = 'block';
+  document.body.style.backgroundColor = 'white';
+  
+  const tbody = document.getElementById('historyTableBody');
+  tbody.innerHTML = '';
+  let score = 0;
+  historyEntries.forEach(entry => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${entry.status}</td><td>${entry.question}</td><td>${entry.answer}</td>`;
+    tbody.appendChild(tr);
+    if(entry.status === '✓') score++;
+  });
+
+  const totalQuestions = historyEntries.length;
+  const ratingPercentage = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(0) : 0;
+
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  scoreDisplay.textContent = `Score: ${score}`;
+  scoreDisplay.style.display = 'block'; // Show score after game ends
+  document.getElementById('rating').textContent = `Rating: ${ratingPercentage}%`;
+
+  document.getElementById('startContainer').style.display = 'flex';
+}
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('choice1').addEventListener('click', e => checkAnswer(e.target.textContent));
+document.getElementById('choice2').addEventListener('click', e => checkAnswer(e.target.textContent));
+
+updateDate();
+</script>
+
+</body>
+</html>
