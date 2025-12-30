@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bold Times Rainbow Math</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: "Times New Roman", Times, serif;
+            font-weight: bold;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #ffffff;
+            color: #1c1c1e;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        @keyframes rainbow_flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .rainbow-text {
+            background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+            background-size: 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow_flow 10s linear infinite;
+        }
+
+        /* DaJu Label - Hidden by default */
+        #brand-label {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            z-index: 20;
+            display: none; 
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 10; padding: 20px;
+        }
+
+        #status-text { font-size: 2.5rem; margin-bottom: 5px; }
+        #final-score { font-size: 3.5rem; margin-bottom: 10px; display: none; }
+
+        #timestamp {
+            position: absolute;
+            top: 20px; right: 20px;
+            text-align: right;
+            font-size: 1rem;
+            line-height: 1.2;
+            display: none;
+        }
+
+        #start-btn {
+            font-size: 5vw;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+            background-size: 400%;
+            animation: rainbow_flow 10s linear infinite;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-top: 15px;
+        }
+
+        #timer-wrapper {
+            width: 120px;
+            height: 6px;
+            background: #e5e5ea;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+            visibility: hidden;
+        }
+
+        #timer-bar {
+            width: 100%;
+            height: 100%;
+            background: #007aff;
+            transform-origin: left;
+        }
+
+        #history-container {
+            width: 100%;
+            max-width: 360px;
+            max-height: 35vh;
+            overflow-y: auto;
+            margin: 10px 0;
+            display: none;
+            border: 3px solid #000;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        th { position: sticky; top: 0; background: #000; color: #fff; padding: 12px 8px; text-transform: uppercase; font-size: 0.75rem; }
+        td { padding: 10px 8px; text-align: center; border-bottom: 1px solid #ddd; }
+        
+        .status-win { color: #28a745; font-size: 1.2rem; }
+        .status-lose { color: #dc3545; }
+
+        #lives-container { position: absolute; top: 5%; display: flex; flex-direction: column; align-items: center; gap: 5px; visibility: hidden; }
+        .hearts { display: flex; gap: 8px; }
+        .life { width: 12px; height: 12px; border-radius: 50%; background-color: #ff3b30; transition: opacity 0.3s; }
+        .life.lost { opacity: 0.1; }
+
+        #question { font-size: 18vw; margin-bottom: 8vh; visibility: hidden; display: flex; align-items: center; justify-content: center; }
+        .small-hourglass { font-size: 0.6em; vertical-align: middle; }
+
+        .options { display: flex; gap: 1cm; width: 100%; justify-content: center; visibility: hidden; }
+
+        .game-btn {
+            background: #f2f2f7; border: 3px solid #000;
+            width: 40vw; height: 25vw; border-radius: 12px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 14vw; cursor: pointer; outline: none;
+        }
+
+        .correct-box { border-color: #28a745 !important; color: #28a745 !important; background-color: #eaffea !important; }
+        .wrong-box { border-color: #dc3545 !important; color: #dc3545 !important; background-color: #ffeaea !important; }
+
+        @media (min-width: 600px) {
+            #question { font-size: 7rem; }
+            .game-btn { width: 170px; height: 110px; font-size: 4rem; }
+            #start-btn { font-size: 1.5rem; }
+            #brand-label { font-size: 2rem; display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="brand-label" class="rainbow-text">DaJu</div>
+
+    <div id="overlay">
+        <div id="timestamp" class="rainbow-text">
+            <div id="date-display"></div>
+            <div id="time-display"></div>
+        </div>
+        <div id="status-text">READY?</div>
+        <div id="final-score" class="rainbow-text">🏆 0</div>
+        
+        <div id="history-container">
+            <table>
+                <thead><tr><th>Status</th><th>Given</th><th>You</th><th>Ans</th></tr></thead>
+                <tbody id="history-body"></tbody>
+            </table>
+        </div>
+        <button id="start-btn" onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="lives-container">
+        <div class="hearts">
+            <div class="life"></div><div class="life"></div><div class="life"></div><div class="life"></div><div class="life"></div>
+        </div>
+        <div id="timer-wrapper"><div id="timer-bar"></div></div>
+    </div>
+
+    <div id="question">0 + 0 = ?</div>
+    <div class="options">
+        <button id="btn0" class="game-btn">?</button>
+        <button id="btn1" class="game-btn">?</button>
+    </div>
+
+<script>
+    let lives = 5;
+    let correctCount = 0;
+    let history = [];
+    let sessionStart = { date: '', time: '' };
+    let timerTimeout;
+    const TIME_LIMIT = 1250;
+
+    const qEl = document.getElementById('question');
+    const overlay = document.getElementById('overlay');
+    const tsEl = document.getElementById('timestamp');
+    const scoreEl = document.getElementById('final-score');
+    const statusText = document.getElementById('status-text');
+    const historyBody = document.getElementById('history-body');
+    const lifeDots = document.querySelectorAll('.life');
+    const timerBar = document.getElementById('timer-bar');
+    const timerWrapper = document.getElementById('timer-wrapper');
+    const brandLabel = document.getElementById('brand-label');
+
+    function startGame() {
+        const now = new Date();
+        sessionStart.date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        sessionStart.time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        lives = 5;
+        correctCount = 0;
+        history = [];
+        historyBody.innerHTML = '';
+        tsEl.style.display = 'none';
+        scoreEl.style.display = 'none';
+        brandLabel.style.display = 'none'; // Hide DaJu when game starts
+        statusText.classList.remove('rainbow-text');
+        document.getElementById('history-container').style.display = 'none';
+        lifeDots.forEach(dot => dot.classList.remove('lost'));
+        
+        overlay.style.display = 'none';
+        qEl.style.visibility = 'visible';
+        document.querySelector('.options').style.visibility = 'visible';
+        document.getElementById('lives-container').style.visibility = 'visible';
+        timerWrapper.style.visibility = 'visible';
+        
+        generateQuestion();
+    }
+
+    function startTimer() {
+        clearTimeout(timerTimeout);
+        timerBar.style.transition = 'none';
+        timerBar.style.transform = 'scaleX(1)';
+        timerBar.offsetHeight; 
+        timerBar.style.transition = `transform ${TIME_LIMIT}ms linear`;
+        timerBar.style.transform = 'scaleX(0)';
+
+        timerTimeout = setTimeout(() => {
+            handleAnswer(null, false, true);
+        }, TIME_LIMIT);
+    }
+
+    function generateQuestion() {
+        qEl.className = '';
+        qEl.style.color = '#000';
+        const btns = [document.getElementById('btn0'), document.getElementById('btn1')];
+        btns.forEach(b => { b.className = 'game-btn'; b.disabled = false; });
+
+        const n1 = Math.floor(Math.random() * 10);
+        const n2 = Math.floor(Math.random() * 10);
+        const correct = n1 + n2;
+        let wrong;
+        do { wrong = Math.floor(Math.random() * 19); } while (wrong === correct);
+
+        qEl.innerHTML = `${n1} + ${n2} = ?`;
+        const isLeftCorrect = Math.random() > 0.5;
+        setupButton(btns[0], isLeftCorrect ? correct : wrong, isLeftCorrect, n1, n2, correct);
+        setupButton(btns[1], isLeftCorrect ? wrong : correct, !isLeftCorrect, n1, n2, correct);
+        startTimer();
+    }
+
+    function setupButton(btn, val, isCorrect, n1, n2, correctVal) {
+        btn.innerText = val;
+        btn.onclick = () => handleAnswer(val, isCorrect, false, n1, n2, correctVal, btn);
+    }
+
+    function handleAnswer(val, isCorrect, isTimeout, n1, n2, correctVal, btn) {
+        clearTimeout(timerTimeout);
+        const btns = [document.getElementById('btn0'), document.getElementById('btn1')];
+        btns.forEach(b => b.disabled = true);
+
+        if (isTimeout) {
+            const textParts = qEl.innerText.split(' ');
+            const tN1 = textParts[0], tN2 = textParts[2];
+            qEl.innerHTML = `${tN1} + ${tN2} = <span class="small-hourglass">⌛</span>`;
+            qEl.style.color = '#dc3545';
+            history.push({ status: 'X', given: `${tN1}+${tN2}`, player: '⌛', answer: parseInt(tN1)+parseInt(tN2) });
+        } else {
+            qEl.innerText = qEl.innerText.replace('?', val);
+            qEl.style.color = isCorrect ? '#28a745' : '#dc3545';
+            history.push({ status: isCorrect ? '✓' : 'X', given: `${n1}+${n2}`, player: val, answer: correctVal });
+        }
+
+        if (isCorrect && !isTimeout) {
+            correctCount++;
+            btn.classList.add('correct-box');
+            setTimeout(generateQuestion, 500);
+        } else {
+            lives--;
+            if (!isTimeout) btn.classList.add('wrong-box');
+            lifeDots[4 - lives].classList.add('lost');
+            if (lives <= 0) setTimeout(showGameOver, 500);
+            else setTimeout(generateQuestion, 500);
+        }
+    }
+
+    function showGameOver() {
+        clearTimeout(timerTimeout);
+        document.getElementById('date-display').innerText = sessionStart.date;
+        document.getElementById('time-display').innerText = sessionStart.time;
+        tsEl.style.display = 'block';
+        scoreEl.innerText = `🏆 ${correctCount}`;
+        scoreEl.style.display = 'block';
+        brandLabel.style.display = 'block'; // Show DaJu on Game Over
+        statusText.innerText = "GAME OVER";
+        statusText.classList.add('rainbow-text');
+        document.getElementById('start-btn').innerText = "RETRY";
+        
+        history.forEach(item => {
+            const statusClass = item.status === '✓' ? 'status-win' : 'status-lose';
+            const row = `<tr>
+                <td class="${statusClass}">${item.status}</td>
+                <td>${item.given}</td>
+                <td style="font-size: ${item.player === '⌛' ? '1.2rem' : 'inherit'}">${item.player}</td>
+                <td>${item.answer}</td>
+            </tr>`;
+            historyBody.innerHTML += row;
+        });
+
+        document.getElementById('history-container').style.display = 'block';
+        overlay.style.display = 'flex';
+    }
+</script>
+</body>
+</html>
