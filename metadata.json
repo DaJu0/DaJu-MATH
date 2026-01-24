@@ -1,0 +1,5 @@
+{
+  "name": "Dama Master: Pro Checkers",
+  "description": "A high-performance, mobile-optimized Dama (Checkers) game featuring a Gemini-powered AI opponent, fluid animations, and responsive design for Android and desktop.",
+  "requestFramePermissions": []
+}
